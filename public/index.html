@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#f7f8f3" />
+    <meta
+      name="description"
+      content="从一个问题开始，生成有中文旁白和动画的学习视频，收藏自己的课程，与社区分享。"
+    />
+    <title>AI 视频课堂</title>
+    <link rel="icon" type="image/png" href="/media/icon.png" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <a class="skip" href="#main">跳到正文</a>
+    <header class="top">
+      <div class="top-inner">
+        <a class="brand" href="/" data-nav
+          ><span class="mark" aria-hidden="true"></span>AI 视频课堂</a
+        >
+        <nav aria-label="主导航">
+          <a href="/" data-nav>学习工作台</a><a href="/community" data-nav>社区</a
+          ><a href="/library" data-nav>我的视频</a><a href="/wallet" data-nav>积分钱包</a>
+        </nav>
+        <button id="account" class="signin">登录 / 注册</button>
+      </div>
+    </header>
+    <main id="main" tabindex="-1"><p class="loading">正在打开课堂…</p></main>
+    <footer>
+      <span class="brand small"><span class="mark"></span>AI 视频课堂</span
+      ><span>中文配音动画课程</span>
+    </footer>
+    <dialog id="dialog">
+      <div class="dialog-top">
+        <strong id="dialog-title"></strong
+        ><button type="button" id="close-dialog" aria-label="关闭">×</button>
+      </div>
+      <div id="dialog-body"></div>
+    </dialog>
+    <div id="notice" role="status" aria-live="polite"></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

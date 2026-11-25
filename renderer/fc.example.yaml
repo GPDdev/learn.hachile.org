@@ -1,0 +1,27 @@
+edition: 3.0.0
+name: classroom-renderer
+access: default
+resources:
+  renderer:
+    component: fc3
+    props:
+      region: ${env('FC_REGION')}
+      functionName: learn-classroom-render
+      runtime: custom-container
+      handler: not-used
+      timeout: 900
+      memorySize: 2048
+      cpu: 1
+      diskSize: 512
+      instanceConcurrency: 1
+      internetAccess: true
+      customContainerConfig:
+        image: ${env('FC_IMAGE')}
+        port: 9000
+      environmentVariables:
+        CLASSROOM_ORIGIN: https://learn.hachile.org
+        DASHSCOPE_API_KEY: ${env('DASHSCOPE_API_KEY')}
+      asyncInvokeConfig:
+        asyncTask: true
+        maxAsyncEventAgeInSeconds: 900
+        maxAsyncRetryAttempts: 0

@@ -1,0 +1,13 @@
+# Use dedicated secret storage for hosted deployments. npm start needs no cloud keys.
+# Do not place local development flags on the hosted Worker.
+AUTH_SECRET=
+INVITE_CODE=
+DASHSCOPE_API_KEY=
+RENDER_SECRET=
+FC_ACCESS_KEY_ID=
+FC_ACCESS_KEY_SECRET=
+MAIL_API_KEY=
+ALIPAY_APP_ID=
+ALIPAY_SELLER_ID=
+ALIPAY_PRIVATE_KEY=
+ALIPAY_PUBLIC_KEY=

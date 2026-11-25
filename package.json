@@ -1,0 +1,18 @@
+{
+  "name": "ai-video-classroom",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A Chinese video classroom with conversational lesson planning and narrated animation.",
+  "scripts": {
+    "start": "node tools/local.mjs",
+    "dev": "wrangler dev --local --ip 127.0.0.1 --port 8787",
+    "db:local": "wrangler d1 migrations apply DB --local",
+    "test": "node --test tests/*.test.mjs",
+    "check": "wrangler deploy --dry-run --outdir .check",
+    "deploy": "node tools/deploy.mjs"
+  },
+  "devDependencies": { "wrangler": "^4.60.0" },
+  "engines": { "node": ">=22.16" },
+  "license": "MIT"
+}
