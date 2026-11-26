@@ -4,7 +4,9 @@ import { makeQuote } from './lessons.js';
 import { createJob, browse, item, renderAPI } from './jobs.js';
 import { notify, payReady, mockPay, createOrder, localPay, checkOrder } from './payments.js';
 import { maintenance } from './dispatch.js';
+import { sampleVideo } from './media.js';
 import samples from '../public/samples.json' with { type: 'json' };
+const samplePaths = new Set(samples.map(({ id }) => '/media/' + id + '.mp4'));
 async function wallet(db, u) {
   const { results } = await db
     .prepare('SELECT wallet,SUM(amount) AS n FROM ledger WHERE user_id=? GROUP BY wallet')
@@ -20,6 +22,7 @@ async function route(req, env, ctx) {
     path = url.pathname,
     method = req.method,
     dev = local(req, env);
+  if ((method === 'GET' || method === 'HEAD') && samplePaths.has(path)) return sampleVideo(req, env.ASSETS);
   if (!path.startsWith('/api/')) return env.ASSETS.fetch(req);
   if (env.PUBLIC_PREVIEW === '1') {
     if (method === 'GET' && path === '/api/session')

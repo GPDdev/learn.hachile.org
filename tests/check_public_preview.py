@@ -44,7 +44,9 @@ for sample in samples:
     status, headers, body = read(media)
     assert status == 200 and headers.get_content_type() == "video/mp4", media
     assert hashlib.sha256(body).digest() == hashlib.sha256((assets / media[1:]).read_bytes()).digest(), media
-    status, headers, part = read(media, {"Range": "bytes=0-127"})
-    assert status == 206 and headers["Content-Range"] == f"bytes 0-127/{len(body)}", media
-    assert part == body[:128], media
-    print(f"{ident}: {len(body)} bytes, content and byte range verified.", flush=True)
+    for request_range, start in [("bytes=0-127", 0), ("bytes=-128", len(body) - 128)]:
+        status, headers, part = read(media, {"Range": request_range})
+        expected = f"bytes {start}-{start + 127}/{len(body)}"
+        assert (status, headers.get("Content-Range")) == (206, expected), (media, request_range, status, headers.get("Content-Range"))
+        assert part == body[start:start + 128], (media, request_range)
+    print(f"{ident}: {len(body)} bytes, content and both byte ranges verified.", flush=True)

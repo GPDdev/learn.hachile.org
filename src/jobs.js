@@ -14,6 +14,7 @@ import {
 } from './common.js';
 import { dispatch, renderToken, cloudRenderReady, expireJobs } from './dispatch.js';
 import { renderCost, voiceUnits, costSettlement } from './costs.js';
+import { byteRange } from './media.js';
 const selectJob =
   'SELECT j.id,j.user_id,j.price,j.state,j.created,j.published,j.blocked,j.problem,j.duration,q.kind,q.seconds,q.lesson,u.name AS author FROM jobs j JOIN quotes q ON q.id=j.quote_id JOIN users u ON u.id=j.user_id ';
 function card(r) {
@@ -121,18 +122,10 @@ export async function item(req, env, u, key, action) {
     let start = 0,
       end = size - 1;
     if (range) {
-      const m = /^bytes=(\d*)-(\d*)$/.exec(range);
-      if (!m || (!m[1] && !m[2]))
+      const part = byteRange(range, size);
+      if (!part)
         return new Response(null, { status: 416, headers: { 'Content-Range': 'bytes */' + size } });
-      start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2]));
-      end = m[1] && m[2] ? Math.min(size - 1, Number(m[2])) : size - 1;
-      if (
-        !Number.isSafeInteger(start) ||
-        !Number.isSafeInteger(end) ||
-        start > end ||
-        start >= size
-      )
-        return new Response(null, { status: 416, headers: { 'Content-Range': 'bytes */' + size } });
+      ({ start, end } = part);
       h['Content-Range'] = 'bytes ' + start + '-' + end + '/' + size;
     }
     h['Content-Length'] = String(end - start + 1);

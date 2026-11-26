@@ -285,6 +285,38 @@ test('public preview allows browsing and never opens a login, rendering or payme
   assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM ledger').get().n, 0);
 });
 
+test('bundled videos serve playable byte ranges when static storage only returns whole files', async () => {
+  const content = '0123456789';
+  const env = {
+    ASSETS: {
+      async fetch(req) {
+        assert.equal(req.headers.has('Range'), false);
+        return new Response(req.method === 'HEAD' ? null : content, {
+          headers: { 'Content-Type': 'video/mp4', 'Content-Length': '10', ETag: '"lesson"' },
+        });
+      },
+    },
+  };
+  const get = (headers, method = 'GET') => worker.fetch(
+    new Request('https://learn.hachile.org/media/rings.mp4', { headers, method }), env, {},
+  );
+  for (const [range, start, end] of [['bytes=0-2', 0, 2], ['bytes=6-', 6, 9], ['bytes=-2', 8, 9]]) {
+    const response = await get({ Range: range });
+    assert.equal(response.status, 206);
+    assert.equal(response.headers.get('Content-Range'), `bytes ${start}-${end}/10`);
+    assert.equal(await response.text(), content.slice(start, end + 1));
+  }
+  const invalid = await get({ Range: 'bytes=12-' });
+  assert.equal(invalid.status, 416);
+  assert.equal(invalid.headers.get('Content-Range'), 'bytes */10');
+  const changed = await get({ Range: 'bytes=0-2', 'If-Range': '"outdated"' });
+  assert.equal(changed.status, 200);
+  assert.equal(await changed.text(), content);
+  const head = await get({}, 'HEAD');
+  assert.equal(head.headers.get('Accept-Ranges'), 'bytes');
+  assert.equal(await head.text(), '');
+});
+
 test('hosted planning uses a provider response for a new topic and settles actual token usage', async (t) => {
   const { env, member, sqlite } = classroom(),
     cookie = await member();
