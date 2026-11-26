@@ -17,6 +17,8 @@ $env:LEARN_D1_ID = '<本项目专用 D1 UUID>'
 node tools/deploy.mjs --public-preview
 ```
 
+绑定成功后运行 `python tests/check_public_preview.py`，或在 GitHub Actions 的 Classroom checks 中点击 Run workflow，从托管运行器核对公开域名、三部 MP4 的内容及分段播放。
+
 准备开放个人创作时，另行开通 R2，创建私有媒体桶，再完成下面的服务配置。
 
 ```powershell
