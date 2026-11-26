@@ -2,6 +2,7 @@
 
 import json
 import sys
+import time
 from pathlib import Path
 
 from playwright.sync_api import expect, sync_playwright
@@ -9,6 +10,18 @@ from playwright.sync_api import expect, sync_playwright
 
 origin = "https://learn.hachile.org"
 samples = json.loads((Path(__file__).resolve().parents[1] / "public/samples.json").read_text(encoding="utf-8"))
+
+
+def wait_for_playback(player, start):
+    deadline = time.monotonic() + 20
+    while time.monotonic() < deadline:
+        position, seeking, paused, error = player.evaluate("(v) => [v.currentTime, v.seeking, v.paused, v.error?.message]")
+        assert not error, error
+        if not seeking and not paused and position > start + 0.25:
+            return
+        time.sleep(0.1)
+    raise AssertionError(f"Playback did not advance past {start:.1f}s; last position {position:.1f}s")
+
 
 with sync_playwright() as playwright:
     channel = "msedge" if sys.platform == "win32" else "chrome"
@@ -22,11 +35,8 @@ with sync_playwright() as playwright:
         expect(page.get_by_role("heading", name=sample["title"])).to_be_visible()
         player = page.locator("video")
         player.evaluate("(v) => { v.muted = true; return v.play(); }")
-        page.wait_for_function("document.querySelector('video').currentTime > 0.25")
+        wait_for_playback(player, 0)
         duration = player.evaluate("(v) => { v.currentTime = v.duration / 2; return v.duration; }")
-        page.wait_for_function("""() => {
-            const v = document.querySelector('video');
-            return !v.seeking && !v.paused && v.currentTime > v.duration / 2 + 0.25;
-        }""")
+        wait_for_playback(player, duration / 2)
         print(f"{sample['id']}: played and sought to the midpoint of {duration:.1f}s.", flush=True)
     browser.close()
