@@ -4,6 +4,7 @@ import { makeQuote } from './lessons.js';
 import { createJob, browse, item, renderAPI } from './jobs.js';
 import { notify, payReady, mockPay, createOrder, localPay, checkOrder } from './payments.js';
 import { maintenance } from './dispatch.js';
+import samples from '../public/samples.json' with { type: 'json' };
 async function wallet(db, u) {
   const { results } = await db
     .prepare('SELECT wallet,SUM(amount) AS n FROM ledger WHERE user_id=? GROUP BY wallet')
@@ -20,6 +21,20 @@ async function route(req, env, ctx) {
     method = req.method,
     dev = local(req, env);
   if (!path.startsWith('/api/')) return env.ASSETS.fetch(req);
+  if (env.PUBLIC_PREVIEW === '1') {
+    if (method === 'GET' && path === '/api/session')
+      return json({
+        preview: true, local: false, offline: false, mode: 'preview', paymentAvailable: false, user: null,
+      });
+    if (method === 'GET' && path === '/api/community')
+      return json({
+        items: samples.map(({ id, kind, subject, title, summary }) => ({
+          id, kind, subject, title, summary, sample: true,
+        })),
+        next: null,
+      });
+    fault(503, '课堂现开放示例课试看，账号、视频创作和充值尚未开放。');
+  }
   if (path === '/api/payments/notify' && method === 'POST') return notify(req, env);
   const render = path.match(/^\/api\/internal\/render\/([\w-]+)\/(next|claim|upload|finish|fail)$/);
   if (render && method === 'POST') return renderAPI(req, env, render[1], render[2]);

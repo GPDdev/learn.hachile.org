@@ -268,6 +268,23 @@ test('localhost-only development login, payment, and renderer credentials stay s
   });
   assert.equal(wrongRenderer.status, 403);
 });
+test('public preview allows browsing and never opens a login, rendering or payment operation', async () => {
+  const { env, call, sqlite } = classroom();
+  env.PUBLIC_PREVIEW = '1';
+  const session = await (await call('session')).json();
+  assert.equal(session.preview, true);
+  assert.equal(session.paymentAvailable, false);
+  assert.equal(session.local, false);
+  const catalog = await (await call('community')).json();
+  assert.deepEqual(catalog.items.map((item) => item.id), ['rings', 'cosmos', 'network']);
+  assert.ok(catalog.items.every((item) => item.sample));
+  assert.equal(catalog.next, null);
+  for (const path of ['auth/code', 'quotes', 'jobs', 'orders', 'payments/notify', 'internal/render/local/next']) {
+    assert.equal((await call(path, {})).status, 503);
+  }
+  assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM ledger').get().n, 0);
+});
+
 test('hosted planning uses a provider response for a new topic and settles actual token usage', async (t) => {
   const { env, member, sqlite } = classroom(),
     cookie = await member();

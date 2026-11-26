@@ -71,6 +71,7 @@ async function api(path, data) {
 }
 async function refreshSession() {
   session = await api('session');
+  document.documentElement.toggleAttribute('data-public-preview', !!session.preview);
   document.querySelector('#account').textContent = session.user ? session.user.name : '登录 / 注册';
 }
 function notice(message) {
@@ -223,11 +224,8 @@ function modes() {
     )
     .join('');
 }
-async function home(seq) {
-  main.innerHTML =
-    '<section class="hero"><div class="hero-art" aria-hidden="true"><div class="starfield"></div><img src="/media/saturn.jpg" alt=""></div><div class="hero-content"><div class="eyebrow"><span class="signal"></span>' +
-    (session.offline ? '本机示例模式' : session.user?.canGenerate ? '视频生成可用' : '邀请内测') +
-    '</div><h1>今天，想学点什么？</h1><p>说说你想探索的领域，或直接问一个知识点。</p><form class="composer" id="ask"><textarea name="topic" id="topic" required minlength="2" maxlength="240" aria-label="学习主题" placeholder="例如，土星的环究竟是什么？">' +
+function topicForm() {
+  return '<p>说说你想探索的领域，或直接问一个知识点。</p><form class="composer" id="ask"><textarea name="topic" id="topic" required minlength="2" maxlength="240" aria-label="学习主题" placeholder="例如，土星的环究竟是什么？">' +
     h(content) +
     '</textarea><div class="composer-row"><div class="modes">' +
     modes() +
@@ -250,13 +248,26 @@ async function home(seq) {
     ['零基础', '已有基础', '进阶学习']
       .map((x) => '<option ' + (x === level ? 'selected' : '') + '>' + x + '</option>')
       .join('') +
-    '</select></label></div></div>' +
+    '</select></label></div>';
+}
+async function home(seq) {
+  const status = session.preview ? '公开试看' : session.offline ? '本机示例模式' : session.user?.canGenerate ? '视频生成可用' : '邀请内测';
+  const intro = session.preview
+    ? '<p>看看土星环由什么组成，或跟着动画了解神经网络怎样认出手写数字。</p><div class="actions space"><a class="primary" href="#samples">挑一堂课 ' + icon('arrow') + '</a></div>'
+    : topicForm();
+  main.innerHTML =
+    '<section class="hero"><div class="hero-art" aria-hidden="true"><div class="starfield"></div><img src="/media/saturn.jpg" alt=""></div><div class="hero-content"><div class="eyebrow"><span class="signal"></span>' +
+    status + '</div><h1>今天，想学点什么？</h1>' + intro + '</div>' +
     link('/sample/rings', '<i>' + icon('play') + '</i> 观看土星环示例课', 'hero-preview') +
-    '</section><section class="section"><div class="section-head"><div><h2>示例课程</h2><p>先看一堂课，了解配音动画的讲解方式。</p></div></div><div class="cards">' +
+    '</section><section class="section" id="samples"><div class="section-head"><div><h2>示例课程</h2><p>' +
+    (session.preview ? '三堂课程均可直接播放。账号注册、个人创作和积分充值尚未开放。' : '先看一堂课，了解配音动画的讲解方式。') +
+    '</p></div></div><div class="cards">' +
     samples.map(sampleCard).join('') +
-    '</div></section><section class="section"><div class="section-head"><div><h2>社区新课</h2></div>' +
+    '</div></section>' +
+    (session.preview ? '' : '<section class="section"><div class="section-head"><div><h2>社区新课</h2></div>' +
     link('/community', '浏览社区 ' + icon('arrow')) +
-    '</div><div id="community-preview"></div></section>';
+    '</div><div id="community-preview"></div></section>');
+  if (session.preview) return;
   try {
     const { items } = await api('community');
     if (seq === generation)
@@ -371,7 +382,7 @@ function samplePage(s) {
           )
           .join(' ') +
         '</p>',
-      btn(
+      session.preview ? link('/community', '浏览其他课程', 'secondary') : btn(
         'study',
         '从这个主题开始',
         'primary',
@@ -444,7 +455,7 @@ function filteredList(mine) {
       (!query || x.title.toLowerCase().includes(query.toLowerCase())),
   );
   document.querySelector('#results').innerHTML = list.length
-    ? '<div class="cards">' + list.map(videoCard).join('') + '</div>'
+    ? '<div class="cards">' + list.map((v) => v.sample ? sampleCard(v) : videoCard(v)).join('') + '</div>'
     : empty(
         listItems.length ? '没有匹配的课程' : mine ? '还没有生成的视频' : '还没有公开的课程',
         listItems.length
@@ -459,7 +470,7 @@ function filteredList(mine) {
 async function listing(mine, seq) {
   main.innerHTML = heading(
     mine ? '我的视频' : '课程社区',
-    mine ? '查看生成进度，管理你的作品和公开状态。' : '观看学习者主动公开的配音动画课。',
+    mine ? '查看生成进度，管理你的作品和公开状态。' : session.preview ? '本期开放三堂课堂示例。个人投稿将在创作功能开放后展示。' : '观看学习者主动公开的配音动画课。',
   );
   if (mine && !session.user) {
     main.innerHTML += empty(
@@ -576,6 +587,10 @@ async function page() {
     else a.removeAttribute('aria-current');
   });
   try {
+    if (session.preview && ['/outline', '/library', '/wallet', '/admin'].includes(path)) {
+      main.innerHTML = heading('课堂公开试看') + empty('目前可以观看三堂示例课', '账号注册、视频创作和积分充值尚未开放。', link('/community', '选择课程', 'primary'));
+      return;
+    }
     if (path === '/') return await home(seq);
     if (path === '/outline') return draftPage();
     if (path === '/library' || path === '/community')

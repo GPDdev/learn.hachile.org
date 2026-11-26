@@ -9,6 +9,13 @@ if (!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(db || '') || db.start
 const cfg = JSON.parse(readFileSync(path.join(root, 'wrangler.jsonc'), 'utf8'));
 cfg.d1_databases[0].database_id = db;
 cfg.routes = [{ pattern: 'learn.hachile.org', custom_domain: true }];
+const flags = process.argv.slice(2);
+if (flags.some((flag) => flag !== '--public-preview')) throw Error('Unknown deployment option');
+if (flags.includes('--public-preview')) {
+  cfg.vars.PUBLIC_PREVIEW = '1';
+  delete cfg.r2_buckets;
+  cfg.triggers = { crons: [] };
+}
 for (const name of [
   'ACCESS_MODE',
   'PAYMENT_MODE',

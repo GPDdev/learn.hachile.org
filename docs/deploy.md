@@ -4,10 +4,22 @@
 
 ## 1. 准备项目资源
 
-在专用 Cloudflare 项目创建 D1 和私有 R2 桶，并记录 D1 的 UUID。域名仓库已指定 `learn.hachile.org`，只为这一条主机名配置自定义域名。仓库里的零 UUID 仅供本机模拟器使用。
+先创建专用 D1，并记录数据库 UUID。部署脚本只绑定 `learn.hachile.org`。仓库里的零 UUID 仅供本机模拟器使用。
 
 ```powershell
 npx wrangler d1 create learn-video-classroom
+```
+
+公开试看可直接使用 Worker 静态资源播放三段 MP4。预览模式关闭账号、渲染、充值和定时任务，可以在开通 R2、邮箱和模型服务前发布。
+
+```powershell
+$env:LEARN_D1_ID = '<本项目专用 D1 UUID>'
+node tools/deploy.mjs --public-preview
+```
+
+准备开放个人创作时，另行开通 R2，创建私有媒体桶，再完成下面的服务配置。
+
+```powershell
 npx wrangler r2 bucket create learn-classroom-media
 ```
 
